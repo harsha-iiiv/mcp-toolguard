@@ -1,0 +1,3 @@
+# Invalid: mode must be 'enforce' or 'monitor'.
+version: 1
+mode: yolo

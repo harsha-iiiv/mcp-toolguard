@@ -1,0 +1,4 @@
+# Invalid: 'explode' is not an Action.
+version: 1
+severityActions:
+  critical: explode

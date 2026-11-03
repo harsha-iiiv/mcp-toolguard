@@ -1,0 +1,6 @@
+[
+  { "tool": "search_repositories", "arguments": { "query": "modelcontextprotocol servers" } },
+  { "tool": "get_file_contents", "arguments": { "owner": "modelcontextprotocol", "repo": "servers", "path": "README.md" } },
+  { "tool": "list_issues", "arguments": { "owner": "modelcontextprotocol", "repo": "servers", "state": "open" } },
+  { "tool": "create_issue", "arguments": { "owner": "example", "repo": "demo", "title": "Login fails after password reset", "body": "Steps: reset password, log in, see 500. Expected: login works. Logs mention token expired." } }
+]

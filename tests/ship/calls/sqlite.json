@@ -1,0 +1,9 @@
+[
+  { "tool": "create_table", "arguments": { "query": "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, password_hash TEXT, created_at TEXT)" } },
+  { "tool": "write_query", "arguments": { "query": "INSERT INTO users (email, password_hash, created_at) VALUES ('alice@example.com', '$2b$10$abcdefghijklmnopqrstuv', '2026-11-03'), ('bob@example.com', NULL, '2026-11-03')" } },
+  { "tool": "list_tables", "arguments": {} },
+  { "tool": "describe_table", "arguments": { "table_name": "users" } },
+  { "tool": "read_query", "arguments": { "query": "SELECT id, email, created_at FROM users ORDER BY id" } },
+  { "tool": "read_query", "arguments": { "query": "SELECT count(*) AS n FROM users WHERE password_hash IS NULL" } },
+  { "tool": "write_query", "arguments": { "query": "DELETE FROM users WHERE email = 'bob@example.com'" } }
+]

@@ -1,0 +1,35 @@
+# mcp-toolguard preset: STRICT
+#
+# Read-only servers. Every tool whose name looks like it writes, edits, moves, deletes or creates
+# something is denied outright: its calls are blocked and never reach the server.
+# Everything else uses the built-in detection defaults (enforce mode).
+#
+#   mcp-toolguard check-policy examples/presets/strict.yaml
+#   mcp-toolguard run --policy examples/presets/strict.yaml -- npx -y @modelcontextprotocol/server-filesystem ~/projects
+#
+# Globs use '*' (any run of characters) and '?' (one character) and match the whole tool name.
+
+version: 1
+mode: enforce
+
+tools:
+  # Deny wins over allow. Extend this list for your servers' write tools.
+  deny:
+    - "write_*"
+    - "*_write"
+    - "edit_*"
+    - "*_edit"
+    - "move_*"
+    - "*_move"
+    - "rename_*"
+    - "delete_*"
+    - "*_delete"
+    - "remove_*"
+    - "create_*"
+    - "*_create"
+    - "update_*"
+    - "put_*"
+    - "upload_*"
+  # Calls to tools the server never advertised are blocked too (default is warn).
+  unknown: block
+

@@ -1,0 +1,8 @@
+[
+  { "tool": "fetch", "arguments": { "url": "https://example.com/" } },
+  { "tool": "fetch", "arguments": { "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/LICENSE", "raw": true } },
+  { "tool": "fetch", "arguments": { "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md", "max_length": 5000, "raw": true } },
+  { "tool": "fetch", "arguments": { "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md" } },
+  { "tool": "fetch", "arguments": { "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md", "start_index": 5000, "max_length": 3000 } },
+  { "tool": "fetch", "arguments": { "url": "https://raw.githubusercontent.com/nodejs/node/main/README.md", "max_length": 20000 } }
+]

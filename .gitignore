@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.log
+.mcp-toolguard/
+audit*.jsonl
+!tests/fixtures/**/*.jsonl

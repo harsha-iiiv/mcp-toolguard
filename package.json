@@ -1,0 +1,64 @@
+{
+  "name": "mcp-toolguard-cli",
+  "version": "0.2.0",
+  "description": "A local security proxy for MCP servers: blocks tool poisoning, rug pulls and secret exfiltration before they reach your agent.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "mcp-toolguard": "dist/cli/main.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "toolguard.example.yaml"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "demo": "bash examples/attacks/demo.sh",
+    "prepublishOnly": "npm run typecheck && npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "security",
+    "proxy",
+    "llm",
+    "agent",
+    "prompt-injection"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "yaml": "^2.9.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9",
+    "vitest": "^3.2.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsha-iiiv/mcp-toolguard.git"
+  },
+  "homepage": "https://github.com/harsha-iiiv/mcp-toolguard#readme",
+  "bugs": {
+    "url": "https://github.com/harsha-iiiv/mcp-toolguard/issues"
+  },
+  "author": "Harsha"
+}

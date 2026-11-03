@@ -1,0 +1,18 @@
+# mcp-toolguard preset: PERMISSIVE (observe only)
+#
+# Nothing is blocked. Every would-be block is downgraded to a warning on stderr and recorded in
+# the audit log with wouldBlock: true. Use it to try mcp-toolguard on a working setup, then read
+#
+#   ~/.mcp-toolguard/audit.jsonl
+#
+# to see what strict or balanced would have stopped. Same as passing --monitor to `mcp-toolguard run`.
+#
+#   mcp-toolguard check-policy examples/presets/permissive.yaml
+#   mcp-toolguard run --policy examples/presets/permissive.yaml -- npx -y @modelcontextprotocol/server-filesystem ~/projects
+
+version: 1
+mode: monitor
+
+audit:
+  # Keep a full record of traffic, including clean calls, so you can review it later.
+  logAllowed: true

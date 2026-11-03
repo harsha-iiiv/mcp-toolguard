@@ -1,0 +1,39 @@
+# mcp-toolguard preset: BALANCED (recommended)
+#
+# Reads run freely. Calls to write-like tools are paused until a human approves that exact call:
+# the model receives "[mcp-toolguard] APPROVAL REQUIRED ... mcp-toolguard approve <id>", you run
+#
+#   mcp-toolguard approvals list
+#   mcp-toolguard approve <id>        # or: mcp-toolguard deny <id>
+#
+# and the identical call (same server, tool and arguments) then runs exactly once. A changed
+# argument needs a new approval. Pending requests expire after 24 hours.
+# Everything else keeps the built-in defaults (enforce mode, standard detection rules).
+#
+#   mcp-toolguard check-policy examples/presets/balanced.yaml
+#   mcp-toolguard run --policy examples/presets/balanced.yaml -- npx -y @modelcontextprotocol/server-filesystem ~/projects
+
+version: 1
+mode: enforce
+
+approval:
+  # Tool-name globs ('*' and '?', whole-name match) whose calls need one-time approval.
+  tools:
+    - "write_*"
+    - "*_write"
+    - "edit_*"
+    - "*_edit"
+    - "move_*"
+    - "*_move"
+    - "rename_*"
+    - "delete_*"
+    - "*_delete"
+    - "remove_*"
+    - "create_*"
+    - "*_create"
+    - "update_*"
+    - "put_*"
+    - "upload_*"
+  # Where pending/approved requests are kept. Shared by the proxy and the `approve` command.
+  # Default: $MCP_TOOLGUARD_HOME/approvals.json (~/.mcp-toolguard/approvals.json). Uncomment to override.
+  # file: ~/.mcp-toolguard/approvals.json

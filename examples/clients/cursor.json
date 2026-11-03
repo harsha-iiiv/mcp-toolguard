@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-toolguard-cli",
+        "run",
+        "--",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/allowed/dir"
+      ]
+    },
+    "remote-http": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-toolguard-cli",
+        "run",
+        "--transport",
+        "http",
+        "--url",
+        "https://example.com/mcp"
+      ]
+    }
+  }
+}

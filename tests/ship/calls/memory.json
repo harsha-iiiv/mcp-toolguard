@@ -1,0 +1,11 @@
+[
+  { "tool": "create_entities", "arguments": { "entities": [
+    { "name": "Alice", "entityType": "person", "observations": ["Works on the payments service", "Prefers TypeScript", "On call this week"] },
+    { "name": "payments-service", "entityType": "project", "observations": ["Uses Postgres", "Deploys from GitHub Actions", "Secrets live in the vault, not in the repo"] }
+  ] } },
+  { "tool": "create_relations", "arguments": { "relations": [{ "from": "Alice", "to": "payments-service", "relationType": "maintains" }] } },
+  { "tool": "add_observations", "arguments": { "observations": [{ "entityName": "Alice", "contents": ["Asked to always run tests before merging"] }] } },
+  { "tool": "search_nodes", "arguments": { "query": "payments" } },
+  { "tool": "open_nodes", "arguments": { "names": ["Alice"] } },
+  { "tool": "read_graph", "arguments": {} }
+]

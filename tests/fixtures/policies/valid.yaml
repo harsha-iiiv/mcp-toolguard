@@ -1,0 +1,25 @@
+# A valid policy exercising most fields.
+version: 1
+mode: enforce
+tools:
+  allow: []
+  deny: ["delete_*", "exec?"]
+  unknown: warn
+severityActions:
+  low: allow
+  medium: warn
+  high: block
+  critical: block
+rules:
+  command-injection:
+    action: warn
+  hidden-unicode:
+    severity: high
+arguments:
+  - tool: "echo"
+    path: "message"
+    deny: ["forbidden-word"]
+    reason: "echo must not say the forbidden word"
+audit:
+  redact: true
+  logAllowed: true

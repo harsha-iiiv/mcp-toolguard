@@ -1,0 +1,1 @@
+{ "version": 1, "mode": "enforce", "tools": { "deny": ["send_email"] } }

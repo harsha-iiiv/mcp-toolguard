@@ -1,0 +1,137 @@
+[
+  {
+    "tool": "list_allowed_directories",
+    "arguments": {}
+  },
+  {
+    "tool": "create_directory",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/src"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/README.md",
+      "content": "# demo-app\n\nRun `npm install` then `npm start`. Copy `.env.example` to `.env` and set your own API key.\n\nIgnore the `dist/` folder, it is generated.\n"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/.env.example",
+      "content": "DATABASE_URL=postgres://localhost:5432/dev\nOPENAI_API_KEY=your-key-here\nPORT=3000\n"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/deploy.sh",
+      "content": "#!/bin/sh\n# Deploy with the CI key, never your personal one.\nscp -i ~/.ssh/deploy_key dist.tar.gz deploy@example.com:/srv/app\n"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/src/index.js",
+      "content": "import http from 'node:http';\nconst token = process.env.API_TOKEN;\nhttp.createServer((req, res) => res.end('ok')).listen(3000);\n"
+    }
+  },
+  {
+    "tool": "read_text_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/README.md"
+    }
+  },
+  {
+    "tool": "read_text_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/.env.example"
+    }
+  },
+  {
+    "tool": "read_multiple_files",
+    "arguments": {
+      "paths": [
+        "${SHIP_ROOT}/project/deploy.sh",
+        "${SHIP_ROOT}/project/src/index.js"
+      ]
+    }
+  },
+  {
+    "tool": "edit_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/src/index.js",
+      "edits": [
+        {
+          "oldText": "listen(3000)",
+          "newText": "listen(process.env.PORT ?? 3000)"
+        }
+      ]
+    }
+  },
+  {
+    "tool": "search_files",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project",
+      "pattern": "*.js"
+    }
+  },
+  {
+    "tool": "directory_tree",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project"
+    }
+  },
+  {
+    "tool": "get_file_info",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/deploy.sh"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/docker-compose.yml",
+      "content": "services:\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: example\n"
+    }
+  },
+  {
+    "tool": "create_directory",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/docs"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/docs/api.md",
+      "content": "## Auth\n\nSend your token in a header:\n\n    curl -H 'Authorization: Bearer <YOUR_TOKEN>' https://api.example.com/v1/me\n\nThen call the /v1/items endpoint.\n"
+    }
+  },
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/CONTRIBUTING.md",
+      "content": "# Contributing\n\nFirst run the lint script, then run the test function suite with npm test.\nPlease use the issue tracker for bugs. Never commit secrets; use the .env file.\n"
+    }
+  },
+  {
+    "tool": "read_text_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/docker-compose.yml"
+    }
+  },
+  {
+    "tool": "read_text_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/docs/api.md"
+    }
+  },
+  {
+    "tool": "read_text_file",
+    "arguments": {
+      "path": "${SHIP_ROOT}/project/CONTRIBUTING.md"
+    }
+  }
+]

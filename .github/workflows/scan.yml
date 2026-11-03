@@ -1,0 +1,53 @@
+# Example: scan MCP servers with mcp-toolguard in CI.
+#
+# Builds mcp-toolguard from this repo and runs `mcp-toolguard scan` against the example servers.
+# `scan` exits 0 when every tool is clean, 2 when at least one tool would be blocked, 1 on error.
+# The poisoned server is *expected* to exit 2, so that step asserts the exit code instead of failing on it.
+#
+# To scan your own server, copy a step and replace the command after `--`, e.g.
+#   node dist/cli/main.js scan -- npx -y @modelcontextprotocol/server-filesystem /tmp
+# (or, once installed from npm, `npx mcp-toolguard-cli scan -- <your server command>`).
+name: Scan example
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      # Keep pins and audit state out of the runner's home directory. (The `runner` context is not
+      # available in job-level `env`, so set it from a step via GITHUB_ENV.)
+      - run: echo "MCP_TOOLGUARD_HOME=$RUNNER_TEMP/mcp-toolguard" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: Scan benign server (expect exit 0)
+        run: node dist/cli/main.js scan -- node examples/attacks/servers/benign-server.mjs
+
+      - name: Scan poisoned server (expect exit 2)
+        run: |
+          set +e
+          node dist/cli/main.js scan -- node examples/attacks/servers/poisoned-server.mjs
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "::error::expected mcp-toolguard scan to exit 2 (tool blocked), got $code"
+            exit 1
+          fi
+          echo "poisoned server flagged as expected (exit 2)"
+
+      - name: Machine-readable report (JSON)
+        run: |
+          node dist/cli/main.js scan --json -- node examples/attacks/servers/poisoned-server.mjs > scan-report.json || test $? -eq 2
+          node -e "const r=require('./scan-report.json'); const b=r.filter(t=>t.blocked).map(t=>t.tool); console.log('blocked:', b.join(', ')); if (!b.includes('add')) process.exit(1)"
