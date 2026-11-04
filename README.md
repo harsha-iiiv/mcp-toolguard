@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub repository](https://img.shields.io/badge/GitHub-harsha--iiiv/mcp--toolguard-blue.svg)](https://github.com/harsha-iiiv/mcp-toolguard)
 [![CI](https://github.com/harsha-iiiv/mcp-toolguard/actions/workflows/ci.yml/badge.svg)](https://github.com/harsha-iiiv/mcp-toolguard/actions/workflows/ci.yml)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/harsha-iiiv/mcp-toolguard)
+[![Ask DeepWiki](https://img.shields.io/badge/Ask_DeepWiki-blue)](https://deepwiki.com/harsha-iiiv/mcp-toolguard)
 
 **mcp-toolguard is a free, MIT-licensed local proxy that sits between your MCP client and an MCP
 server and blocks tool poisoning, rug pulls and secret exfiltration before they reach your agent.**
