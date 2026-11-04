@@ -28,7 +28,7 @@ npx -y mcp-toolguard-cli run -- npx -y @modelcontextprotocol/server-filesystem /
 - 💸 **Spend cap**: a per-task dollar cap on tool calls, from a per-tool cost table you define.
 - ✋ **Human approval**: matching calls wait for `mcp-toolguard approve <id>`, then pass exactly once. Every step is in the audit log.
 - 🧩 **Presets, learning and plugins**: strict / balanced / permissive presets, opt-in baseline learning that warns only and never blocks, and your own rules loaded as plugins.
-- 📜 **Hash-chained audit log**: every inspected message is logged with secrets redacted. Editing, deleting or reordering lines breaks the chain.
+- 📜 **Hash-chained audit log**: every inspected message is logged with secrets redacted. Editing, reordering or deleting lines (except from the end) breaks the chain.
 - 🔎 **Scan before you trust**: `mcp-toolguard scan` lists what the proxy would do to a server, without running anything else. Exit codes are made for CI.
 
 ---
@@ -117,7 +117,7 @@ mcp-toolguard inspects all three places where this happens: tool definitions in 
   real MCP server
 ```
 
-`mcp-toolguard run` spawns the real server as a child process and relays JSON-RPC in both directions. Three kinds of message are inspected:
+`mcp-toolguard run` spawns the real server as a child process (or connects to it with `--transport http|sse`) and relays JSON-RPC in both directions. Three kinds of message are inspected:
 
 | Message | Direction | On `block` |
 |---|---|---|
@@ -158,7 +158,7 @@ Without `--policy`, mcp-toolguard looks for `./toolguard.yaml`, `./toolguard.yml
 > MCP clients often start servers with an unexpected working directory, so pass `--policy /absolute/path/toolguard.yaml` in client configs.
 
 ```
-mcp-toolguard init                      # writes ./toolguard.yaml with every option and its default
+mcp-toolguard init                      # writes ./toolguard.yaml with the documented defaults
 mcp-toolguard check-policy toolguard.yaml
 ```
 
@@ -181,13 +181,27 @@ rules: {}                    # per-rule overrides
 arguments: []                # argument constraints
 pins:
   file: ~/.mcp-toolguard/pins.json
+spend:
+  maxSpendPerTaskUsd: null   # e.g. 2 to block calls once a task has spent $2
+  costs: {}                  # USD per call by tool glob, e.g. { "brave_*": 0.005 }
+  defaultCostUsd: 0
+approval:
+  tools: []                  # globs that need `mcp-toolguard approve <id>`
+  file: ~/.mcp-toolguard/approvals.json
+learning:
+  enabled: false             # or run --learning; warns only
+  file: ~/.mcp-toolguard/baseline.json
+  minSamples: 50
+plugins:
+  enabled: false             # or run --plugins <dir>; in-process code, opt-in
+  dir: ./toolguard-plugins
 audit:
   file: ~/.mcp-toolguard/audit.jsonl
   redact: true               # redact secrets before writing
   logAllowed: true           # also log clean, allowed traffic
 ```
 
-`MCP_TOOLGUARD_HOME` replaces `~/.mcp-toolguard` for the default pin and audit paths. `--audit` and `--pins` override the file values.
+`MCP_TOOLGUARD_HOME` replaces `~/.mcp-toolguard` for the default pins, approvals, baseline and audit paths. `--audit` and `--pins` override the file values.
 
 Rule overrides, keyed by rule id:
 
@@ -218,7 +232,7 @@ tools:
   deny: ["delete_*", "move_file"]
 ```
 
-[`toolguard.example.yaml`](toolguard.example.yaml) documents every field.
+[`toolguard.example.yaml`](toolguard.example.yaml) documents the policy fields.
 
 ---
 
@@ -226,7 +240,7 @@ tools:
 
 Every inspected message produces one JSON line in the audit log: timestamp, session, server, tool, action, `wouldBlock`, reasons, findings, and a redacted, truncated summary of the payload. Secrets are redacted before they are written (`audit.redact: true`).
 
-Each line carries `prevHash` and `hash` (sha256 over the canonical JSON of the line), forming a hash chain from the first line. Editing, deleting or reordering lines breaks the chain:
+Each line carries `prevHash` and `hash` (sha256 over the canonical JSON of the line), forming a hash chain from the first line. Editing, reordering or deleting lines (except from the end) breaks the chain:
 
 ```
 $ mcp-toolguard verify-log ~/.mcp-toolguard/audit.jsonl
@@ -242,16 +256,16 @@ Exit code 0 means intact, 1 means broken (the first broken `seq` is printed). Th
 `scan` connects to a server once as an MCP client, lists its tools (following pagination) and prints what the proxy would do, without running anything else:
 
 ```
-$ mcp-toolguard scan -- npx -y some-mcp-server
-mcp-toolguard scan: server 'npx', 3 tool(s), policy builtin (enforce)
+$ mcp-toolguard scan -- node examples/attacks/servers/poisoned-server.mjs
+mcp-toolguard scan: server 'poisoned-server', 2 tool(s), policy builtin (enforce)
 
-  ✓ add
-  ✗ get_weather  [BLOCK]
-      critical tool-poisoning: <rule message> at description
-               evidence: "<excerpt>"
-  ✓ echo
+  ✗ add  [BLOCK]
+      critical tool-poisoning: Tool description contains hidden-instruction marker, secrecy toward the user, side-channel parameter, ... at description
+               evidence: "\"<IMPORTANT>\" · \"Do not tell the user\" · \"Do not mention that\" · ..."
+  ✓ multiply
 
-Summary: 3 tool(s): 2 clean, 0 warn, 1 blocked.
+Summary: 2 tool(s): 1 clean, 0 warn, 1 blocked.
+Blocked tools would be removed from tools/list by `mcp-toolguard run`.
 ```
 
 `--json` prints a JSON array (`serverId`, `tool`, `action`, `blocked`, `wouldBlock`, `reasons`, `findings`) for CI. Exit codes: 0 clean, 2 at least one tool would be blocked, 1 error. Without `--pins`, scan uses a throwaway in-memory pin store, so it never touches your real pins.
@@ -268,7 +282,7 @@ npm run demo
 `npm run demo` builds the project and runs three attacks through the real `dist/cli/main.js run`, printing a before/after transcript for each:
 
 1. **Tool poisoning:** a server whose tool description hides instructions to read `~/.ssh/id_rsa`. The tool is removed from `tools/list`.
-2. **Secret exfiltration:** a tool call with an AWS key and a private key in its arguments. The call is blocked and the server never receives it.
+2. **Secret exfiltration:** a tool call with an AWS access key and secret key in its arguments. The call is blocked and the server never receives it.
 3. **Rug pull:** a server that changes a tool description after the first `tools/list`. The changed tool is blocked.
 
 The script exits non-zero if any expected block does not happen.
@@ -293,7 +307,7 @@ The script exits non-zero if any expected block does not happen.
 mcp-toolguard run [--policy <file>] [--audit <file>] [--pins <file>] [--server-id <id>] [--monitor] [--learning] [--plugins <dir>]
                  [--transport stdio|http|sse] [--url <url>] [--header "Name: value"]... [-- <command> [args...]]
 mcp-toolguard scan [--policy <file>] [--pins <file>] [--server-id <id>] [--json] -- <command> [args...]
-mcp-toolguard approve <id> | deny <id> | approvals list [--status <s>] [--json]
+mcp-toolguard approve <id> [--policy <file>] | deny <id> [--policy <file>] | approvals list [--policy <file>] [--status <s>] [--json]
 mcp-toolguard init [--force]
 mcp-toolguard check-policy <file>
 mcp-toolguard verify-log <file>
@@ -307,28 +321,42 @@ During `run`, stdout is the MCP protocol channel. mcp-toolguard writes all of it
 
 ## 📦 Programmatic API
 
-mcp-toolguard is CLI first, but everything the CLI does is available as a library, so you can embed the proxy in your own launcher, test harness or agent host. ESM only, Node 20+.
+mcp-toolguard is CLI first, but the proxy core is available as a library, so you can embed it in your own launcher, test harness or agent host. ESM only, Node 20+.
 
-```typescript
-import { startProxy, loadPolicy, createPolicyEngine } from 'mcp-toolguard-cli';
+```javascript
+import {
+  startProxy,
+  loadPolicy,
+  createPolicyEngine,
+  createDetector,
+  createPinStore,
+  createAuditLogger,
+} from 'mcp-toolguard-cli';
 
 const { policy } = loadPolicy('./toolguard.yaml');
 const engine = createPolicyEngine(policy);
-const detector = createDetector({ pins: createPinStore() });
-const audit = createAuditLogger({ file: '~/.mcp-toolguard/audit.jsonl' });
+const detector = createDetector({
+  pins: createPinStore(policy.pins.file),
+  disabledRules: engine.disabledRules(),
+});
+const audit = createAuditLogger({ file: policy.audit.file, redact: policy.audit.redact });
 
 const proxy = await startProxy({
   serverId: 'filesystem',
-  sessionId: 'session-1',
+  sessionId: crypto.randomUUID(),
   policy: engine,
   detector,
   audit,
   command: 'npx',
   args: ['-y', '@modelcontextprotocol/server-filesystem', '/path'],
+  env: Object.fromEntries(Object.entries(process.env).filter(([, v]) => typeof v === 'string')),
 });
 
-await proxy.done;
+process.exitCode = await proxy.done;
+await audit.close();
 ```
+
+Three things that bite if you skip them: pass `env`, or the upstream server only gets the SDK's minimal default environment and your shell's API keys never reach it; pass `policy.pins.file` to `createPinStore`, or pins live in memory only and a rug pull between restarts goes unnoticed; save the file as `.mjs` (or set `"type": "module"`), since top-level `await` needs ESM. The script itself becomes the MCP server: `startProxy` talks to your client over this process's stdin/stdout, so never `console.log` in it (use `console.error`) and point your client at `node /abs/path/guard.mjs`. `loadPolicy('./toolguard.yaml')` resolves against the current directory and throws if the file is missing; call `loadPolicy()` with no arguments for the built-in defaults.
 
 The eight names below are frozen from v1.0. They will not be renamed or removed, and their existing parameters and return values will keep their meaning for every 1.x release. Changes are additive only.
 
@@ -343,7 +371,9 @@ The eight names below are frozen from v1.0. They will not be renamed or removed,
 | `verifyAuditLog` | Verify an audit log's hash chain |
 | `loadPlugin` | Load one rule plugin (see [PLUGINS.md](docs/PLUGINS.md)) |
 
-Also exported (stable, but not part of the frozen eight): `defaultPolicy`, `validatePolicy`, `builtinRules`, `hashTool`, `redactSecrets`, `canonicalJson`, `loadPlugins`, `definePlugin`, `runCli` and every type in `src/contracts.ts`. Full signatures: [docs/API.md](docs/API.md).
+Also exported (stable, but not part of the frozen eight): `defaultPolicy`, `validatePolicy`, `builtinRules`, `hashTool`, `redactSecrets`, `canonicalJson`, `loadPlugins`, `definePlugin`, `runCli`, `PluginError`, `PolicyError`, `UsageError` and every type in `src/contracts.ts`. Full signatures: [docs/API.md](docs/API.md).
+
+Library note (0.2.0): approvals, the spend cap, baseline learning and the HTTP/SSE transports are wired up by the CLI but not exported from the package, so `startProxy` alone cannot use them. The eight frozen exports above are the full library surface for now.
 
 ---
 
@@ -357,7 +387,7 @@ Also exported (stable, but not part of the frozen eight): `defaultPolicy`, `vali
 | Detected (warn or block) | 37 (74%) | 1 warned (2%) |
 | Missed | 13 (26%) | - |
 
-Every miss is listed by id in [evals/README.md](evals/README.md), with which rule should have caught it. Detection is regex and pattern based: it catches the published attack patterns and obvious variants, and a determined attacker who knows the rules can phrase around them. Read the misses before relying on it.
+Every miss is listed by id in [evals/README.md](evals/README.md), with an explanation of why it got through. Detection is regex and pattern based: it catches the published attack patterns and obvious variants, and a determined attacker who knows the rules can phrase around them. Read the misses before relying on it.
 
 ---
 
