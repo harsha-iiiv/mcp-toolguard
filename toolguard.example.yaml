@@ -82,6 +82,21 @@ pins:
   # $MCP_TOOLGUARD_HOME (default ~/.mcp-toolguard); a path set here is used as written.
   file: ~/.mcp-toolguard/pins.json
 
+spend:
+  maxSpendPerTaskUsd: null   # e.g. 2 to block calls once a task has spent $2
+  costs: {}                  # USD per call by tool glob, e.g. { "brave_*": 0.005 }
+  defaultCostUsd: 0
+approval:
+  tools: []                  # globs that need `mcp-toolguard approve <id>`
+  file: ~/.mcp-toolguard/approvals.json
+learning:
+  enabled: false             # or run --learning; warns only
+  file: ~/.mcp-toolguard/baseline.json
+  minSamples: 50
+plugins:
+  enabled: false             # or run --plugins <dir>; in-process code, opt-in
+  dir: ./toolguard-plugins
+
 audit:
   # Append-only, hash-chained JSONL log. Check integrity with `mcp-toolguard verify-log <file>`.
   file: ~/.mcp-toolguard/audit.jsonl
