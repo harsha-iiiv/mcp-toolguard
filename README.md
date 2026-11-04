@@ -307,28 +307,42 @@ During `run`, stdout is the MCP protocol channel. mcp-toolguard writes all of it
 
 ## 📦 Programmatic API
 
-mcp-toolguard is CLI first, but everything the CLI does is available as a library, so you can embed the proxy in your own launcher, test harness or agent host. ESM only, Node 20+.
+mcp-toolguard is CLI first, but the proxy core is available as a library, so you can embed it in your own launcher, test harness or agent host. ESM only, Node 20+.
 
-```typescript
-import { startProxy, loadPolicy, createPolicyEngine } from 'mcp-toolguard-cli';
+```javascript
+import {
+  startProxy,
+  loadPolicy,
+  createPolicyEngine,
+  createDetector,
+  createPinStore,
+  createAuditLogger,
+} from 'mcp-toolguard-cli';
 
 const { policy } = loadPolicy('./toolguard.yaml');
 const engine = createPolicyEngine(policy);
-const detector = createDetector({ pins: createPinStore() });
-const audit = createAuditLogger({ file: '~/.mcp-toolguard/audit.jsonl' });
+const detector = createDetector({
+  pins: createPinStore(policy.pins.file),
+  disabledRules: engine.disabledRules(),
+});
+const audit = createAuditLogger({ file: policy.audit.file, redact: policy.audit.redact });
 
 const proxy = await startProxy({
   serverId: 'filesystem',
-  sessionId: 'session-1',
+  sessionId: crypto.randomUUID(),
   policy: engine,
   detector,
   audit,
   command: 'npx',
   args: ['-y', '@modelcontextprotocol/server-filesystem', '/path'],
+  env: Object.fromEntries(Object.entries(process.env).filter(([, v]) => typeof v === 'string')),
 });
 
-await proxy.done;
+process.exitCode = await proxy.done;
+await audit.close();
 ```
+
+Three things that bite if you skip them: pass `env`, or the upstream server only gets the SDK's minimal default environment and your shell's API keys never reach it; pass `policy.pins.file` to `createPinStore`, or pins live in memory only and a rug pull between restarts goes unnoticed; save the file as `.mjs` (or set `"type": "module"`), since top-level `await` needs ESM. The script itself becomes the MCP server: `startProxy` talks to your client over this process's stdin/stdout, so never `console.log` in it (use `console.error`) and point your client at `node /abs/path/guard.mjs`. `loadPolicy('./toolguard.yaml')` resolves against the current directory and throws if the file is missing; call `loadPolicy()` with no arguments for the built-in defaults.
 
 The eight names below are frozen from v1.0. They will not be renamed or removed, and their existing parameters and return values will keep their meaning for every 1.x release. Changes are additive only.
 
@@ -344,6 +358,8 @@ The eight names below are frozen from v1.0. They will not be renamed or removed,
 | `loadPlugin` | Load one rule plugin (see [PLUGINS.md](docs/PLUGINS.md)) |
 
 Also exported (stable, but not part of the frozen eight): `defaultPolicy`, `validatePolicy`, `builtinRules`, `hashTool`, `redactSecrets`, `canonicalJson`, `loadPlugins`, `definePlugin`, `runCli` and every type in `src/contracts.ts`. Full signatures: [docs/API.md](docs/API.md).
+
+Library note (0.2.0): approvals, the spend cap, baseline learning and the HTTP/SSE transports are wired up by the CLI but not exported from the package, so `startProxy` alone cannot use them. The eight frozen exports above are the full library surface for now.
 
 ---
 
